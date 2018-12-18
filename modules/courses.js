@@ -3,7 +3,6 @@ var Schema=mongoose.Schema;
 var courseSchame=new Schema({
     "courseId":String ,
     "courseSN":String,
-    "courseSN":String,
 	"courseName":String,
 	"teacherId":String,
 	"teacherName":String,

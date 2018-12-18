@@ -2,8 +2,8 @@ var express=require('express');
 var router = express.Router();
 var mongoose=require('mongoose');
 var User=require('./../modules/users');
-//连接mongodb数据库
-mongoose.connect('mongodb://127.0.0.1:27017/wecourse');
+//连接mongodb test
+mongoose.connect('mongodb://118.24.187.179:27017/wecourse');
 mongoose.connection.on('connected',function(){
     console.log('mongodb connected success')
 });
@@ -19,7 +19,7 @@ router.get('/',function(req,res,next){
     //res.send('hello,')
     
     User.find({},function(err,doc){
-        //console.log(doc.length)
+        console.log(doc)
         if(err){
             res.json({
                 status:'1',
@@ -61,13 +61,18 @@ router.post('/login',function(req,res,next){
                     path:'/',
                     maxAge:1000*60*60
                 });
+                let temp={
+                    userId:doc.userId,
+                    userName:doc.userName,
+                    userImg:doc.userImg
+                }
 
                 res.json({
                     status:'0',
                     msg:'',
                     result:{
                         count:doc.length,
-                        userInfo:doc
+                        userInfo:temp
                     }
                 })
 
@@ -94,12 +99,33 @@ router.post('/info',function(req,res,next){
         }else{
             console.log('/info')
             if(doc){
+                //尽量传递少的数据
+                let list=[];
+                let arr=doc.courseList;
+                arr.map((item)=>{
+                    let temp={
+                        courseId:item.courseId,
+                        courseSN:item.courseSN,
+                        courseName:item.courseName,
+                        courseInfo:item.courseInfo
+                    }
+                    list.push(temp)
+                })
+                let temp={
+                    userId:doc.userId,
+                    userImg:doc.userImg,
+                    status:doc.status,
+                    userName:doc.userName,
+                    email:doc.email,
+                    courseList:list
+
+                }
                 res.json({
                     status:'0',
                     msg:'',
                     result:{
                         count:doc.length,
-                        info:doc
+                        info:temp
                     }
                 })
             }else{

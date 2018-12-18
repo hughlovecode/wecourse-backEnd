@@ -1,15 +1,14 @@
 var express=require('express');
 var router = express.Router();
-var mongoose=require('mongoose');
-var Course=require('./../modules/courses')
+var Course=require('./../modules/courses');
+var User=require('./../modules/users');
 //列表接口
-router.get('/',function(req,res,next){
+router.post('/',function(req,res,next){
     //res.send('hello,')
     let params={
-        teacherId:'001'
+        userId:req.body.userId
     }
-    
-    Course.find(params,function(err,doc){
+    User.findOne(params,function(err,doc){
         //console.log(doc.length)
         if(err){
             res.json({
@@ -19,14 +18,12 @@ router.get('/',function(req,res,next){
         }else{
             if(doc){
                 let list=[];
-            doc.map((item)=>{
+                let arr=doc.courseList;
+            arr.map((item)=>{
                 let temp={
                     courseId:item.courseId,
                     courseSN:item.courseSN,
                     courseName:item.courseName,
-                    teacherName:item.teacherName,
-                    classCount:item.classCount,
-                    classAddress:item.classAddress,
                     courseInfo:item.courseInfo
                 }
                 list.push(temp)
@@ -50,11 +47,11 @@ router.get('/',function(req,res,next){
     })    
 });
 //详情接口
-router.get('/detail',function(req,res,next){
+router.post('/detail',function(req,res,next){
     //res.send('hello,')
     let params={
-        courseId:'305098',
-        courseSN:'002'
+        courseId:req.body.courseId,
+        courseSN:req.body.courseSN
     }
     
     Course.findOne(params,function(err,doc){
@@ -67,12 +64,13 @@ router.get('/detail',function(req,res,next){
         }else{
             
             if(doc){
+                //console.log(doc)
                 res.json({
                 status:'0',
                 msg:'',
                 result:{
                     count:doc.length,
-                    coursedetail:doc
+                    courseDetail:doc
                 }
             })
             }else{
@@ -210,8 +208,8 @@ router.post('/addCourse',function(req,res,next){
 //添加学生接口
 router.get('/addStudent',function(req,res,next){
     let index={
-        courseId:'30400301',
-        courseSN:'200'
+        courseId:req.body.courseId,
+        courseSN:req.body.courseSN,
     }
     let newStudent={
                     studentId:req.body.studentId,
