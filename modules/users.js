@@ -7,6 +7,7 @@ var userSchame=new Schema({
 	"userName":String,
 	"password":String,
 	"email":String,
+	"userPhone":String,
 	"courseList":[
 	{
 		"courseName":String,

@@ -117,7 +117,7 @@ router.post('/detail/modify',function(req,res,next){
             }
         }
     })
-})
+});
 //删除课程信息的接口
 router.post('/detail/delete',function(req,res,next){
     //console.log('here')
@@ -149,28 +149,31 @@ router.post('/detail/delete',function(req,res,next){
             }
         }
     })
-})
+});
 //添加课程接口
 router.post('/addCourse',function(req,res,next){
     let params={
-        courseId:'30400301',
-        courseSN:'200',
-        courseName: "math",
-        teacherId: "004",
-        teacherName: "wenhonghao",
-        courseSSID: "43994399",
+        courseId:req.body.courseId,
+        courseSN:req.body.courseSN,
+        courseName: req.body.courseName,
+        teacherId: req.body.teacherId,
+        teacherName: req.body.teacherName,
+        courseInfo:req.body.courseInfo,
+        courseImg: req.body.courseImg,
+        courseSSID: "",
         classCount: "0",
         HContent: "",
-        HTime: "",
-        classAddress: "综合楼C203",
-        status: "0",
+        Htime: "",
+        classAddress: req.body.classAddress,
+        status: "1",
         HTitle: "",
         students:[]
     }
     let index={
-        courseId:'30400301',
-        courseSN:'200'
+        courseId:req.body.courseId,
+        courseSN:req.body.courseSN,
     }
+    console.log(index)
     Course.findOne(index,function(err,doc){
         if(err){
             res.json({
@@ -204,7 +207,54 @@ router.post('/addCourse',function(req,res,next){
             }
         }
     })
-})
+});
+//修改课程接口
+router.post('/modifyCourse',function(req,res,next){
+    let params={
+        courseId:req.body.courseId,
+        courseSN:req.body.courseSN,
+        courseName: req.body.courseName,
+        teacherId: req.body.teacherId,
+        teacherName: req.body.teacherName,
+        courseInfo:req.body.courseInfo,
+        courseImg: req.body.courseImg,
+        classAddress: req.body.classAddress,
+    }
+    let index={
+        courseId:req.body.courseId,
+        courseSN:req.body.courseSN,
+    }
+    console.log(index)
+    Course.findOne(index,function(err,doc){
+        if(err){
+            res.json({
+                status:'1',
+                msg:err.message
+            })
+        }else{
+            if(doc){
+                doc.courseName=params.courseName;
+                doc.courseInfo=params.courseInfo;
+                doc.courseImg=params.courseImg;
+                doc.classAddress=params.classAddress;
+                doc.save();
+                res.json({
+                    status:'0',
+                    msg:'',
+                    result:doc.students
+                })
+
+            }else{
+                res.json({
+                    status:'2',
+                    msg:'',
+                    result:'没有这门课程'
+                })
+
+            }
+        }
+    })
+});
 //添加学生接口
 router.get('/addStudent',function(req,res,next){
     let index={
@@ -250,16 +300,16 @@ router.get('/addStudent',function(req,res,next){
             }
         }
     })
-})
+});
 
 //删除学生接口
 router.post('/deleteStudent',function(req,res,next){
     let index={
-        courseId:'304509',
-        courseSN:'001'
+        courseId:req.body.courseId,
+        courseSN:req.body.courseSN,
     }
     //let deleteItem=req.body.studentId;
-    let deleteItem=10002;
+    let deleteItem=req.body.studentId;
     Course.findOne(index,function(err,doc){
         if(err){
             res.json({
@@ -275,7 +325,7 @@ router.post('/deleteStudent',function(req,res,next){
                         itemIndex=index
                     }
                 });
-                list.splice(index,1)
+                list.splice(itemIndex,1)
                 doc.save(function(err,result){
                     if(err){
                         res.json({
@@ -298,7 +348,7 @@ router.post('/deleteStudent',function(req,res,next){
             }
         }
     })
-})
+});
 
 //修改学生信息
 router.post('/modifyStudent',function(req,res,next){
@@ -351,8 +401,193 @@ router.post('/modifyStudent',function(req,res,next){
         }
     })
 
-})
+});
+//开始签到,修改课程状态
+router.post('/startSignIn',function(req,res,next){
+    let params={
+        courseId:req.body.courseId,
+        courseSN:req.body.courseSN
+    }
+    let classCount=req.body.classCount;
+    let courseSSID=req.body.courseSSID;
+    Course.findOne(params,function(err,doc){
+        if(err){
+            res.json({
+                status:'1',
+                msg:err.message
+            })
+        }else{
+            if(doc){
+                //0表示正在签到
+                doc.status='0';
+                doc.classCount = classCount;
+                doc.courseSSID = courseSSID;
+                doc.save()
+                res.json({
+                    status:'0',
+                    msg:''
+                })
 
+            }else{
+                res.json({
+                    status:'2',
+                    msg:'找不到你准备修改的课程'
+                })
+            }
+        }
+    })
+});
+//结束签到
+router.post('/finishSignIn',function(req,res,next){
+    let params={
+        courseId:req.body.courseId,
+        courseSN:req.body.courseSN
+    }
+    Course.findOne(params,function(err,doc){
+        if(err){
+            res.json({
+                status:'1',
+                msg:err.message
+            })
+        }else{
+            if(doc){
+                //1表示结束签到
+                doc.status='1'
+                doc.save()
+                res.json({
+                    status:'0',
+                    msg:''
+                })
+
+            }else{
+                res.json({
+                    status:'2',
+                    msg:'找不到你准备修改的课程'
+                })
+            }
+        }
+    })
+});
+//老师代签接口
+router.post('/TSignIn',function(req,res,next){
+    let params={
+        courseId:req.body.courseId,
+        courseSN:req.body.courseSN
+    }
+    let info = req.body.info
+    Course.findOne(params,function(err,doc){
+        if(err){
+            res.json({
+                status:'1',
+                msg:err.message
+            })
+        }else{
+            if(doc){
+                //学生状态修改
+                doc.students.forEach(item=>{
+                    if(item.studentId === info.studentId){
+                        item.signInCount = info.signInCount
+                       // console.log(item)
+                    }
+                })
+                doc.save()
+                res.json({
+                    status:'0',
+                    msg:'success'
+                })
+
+            }else{
+                res.json({
+                    status:'2',
+                    msg:'找不到你准备修改的课程'
+                })
+            }
+        }
+    })
+});
+//布置作业
+router.post('/setHomework',function(req,res,next){
+    let params={
+        courseId:req.body.courseId,
+        courseSN:req.body.courseSN
+    }
+    let HTime = req.body.HTime
+    let HTitle = req.body.HTitle
+    let HContent = req.body.HContent
+    Course.findOne(params,function(err,doc){
+        if(err){
+            res.json({
+                status:'1',
+                msg:err.message
+            })
+        }else{
+            if(doc){
+                //作业修改
+                doc.Htime=doc.Htime+'@#$%'+HTime
+                doc.HContent=doc.HContent+'@#$%'+HContent
+                doc.HTitle=doc.HTime+'@#$%'+HTitle
+                doc.save()
+                res.json({
+                    status:'0',
+                    msg:'success'
+                })
+
+            }else{
+                res.json({
+                    status:'2',
+                    msg:'找不到你准备修改的课程'
+                })
+            }
+        }
+    })
+});
+//添加学生
+router.post('/addStudent',function(req,res,next){
+    let params={
+        courseId:req.body.courseId,
+        courseSN:req.body.courseSN
+    }
+    let signInCount=new Array()
+    let newItem={
+        signInCount:signInCount,
+        studentId:req.body.studentId,
+        studentName:req.body.studentName,
+        studentImg:req.body.studentImg
+    }
+    Course.findOne(params,function(err,doc){
+        if(err){
+            res.json({
+                status:'1',
+                msg:err.message
+            })
+        }else{
+            if(doc){
+                doc.students.push(newItem);
+
+                doc.save(function(err,result){
+                    if(err){
+                        res.json({
+                            status:'3',
+                            msg:err.message
+                        })
+                    }else{
+                        res.json({
+                            status:'0',
+                            msg:'success'
+                        })
+                    }
+                })
+                
+
+            }else{
+                res.json({
+                    status:'2',
+                    msg:'找不到你准备修改的课程'
+                })
+            }
+        }
+    })
+});
 
 
 
