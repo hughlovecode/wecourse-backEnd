@@ -422,11 +422,46 @@ router.post('/startSignIn',function(req,res,next){
                 doc.status='0';
                 doc.classCount = classCount;
                 doc.courseSSID = courseSSID;
-                doc.save()
-                res.json({
-                    status:'0',
-                    msg:''
+                let students=doc.students
+                for(let i=0;i<students.length;i++){
+                    let signArray=students[i].signInCount;
+                    console.log(signArray)
+                    let tag=false
+                    let newItem={
+                        tag:classCount,
+                        isSign:'false'
+                    }
+                    if(signArray.length==0){
+                        signArray.push(newItem)
+                    }else{
+                        for(let j=0;j<signArray.length;j++){
+                            if(signArray[j].tag===classCount){
+                                tag=true
+                            }
+                        }
+                    }
+                    if(!tag){
+                        signArray.push(newItem)
+                    }
+                    console.log(signArray)
+
+                }
+                doc.save(function(err2,result){
+                    if(err2){
+                        res.json({
+                            status:'3',
+                            msg:err2.message
+                        })
+                    }else{
+                        res.json({
+                            status:'0',
+                            msg:''
+                        })
+                    }
                 })
+                
+                
+                
 
             }else{
                 res.json({
