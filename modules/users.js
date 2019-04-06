@@ -8,6 +8,7 @@ var userSchame=new Schema({
 	"password":String,
 	"email":String,
 	"userPhone":String,
+	"openId":String,
 	"courseList":[
 	{
 		"courseName":String,

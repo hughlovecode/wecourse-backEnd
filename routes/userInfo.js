@@ -2,6 +2,7 @@ var express=require('express');
 var router = express.Router();
 var mongoose=require('mongoose');
 var User=require('./../modules/users');
+var request=require('request')
 var Course=require('./../modules/courses');
 //连接mongodb test
 mongoose.connect('mongodb://118.24.187.179:27017/wecourse');
@@ -545,6 +546,116 @@ router.post('/addStudent',function(req,res,next){
                         msg:'数据表中没有这个学生,请先注册!'
                     })
             }
+        }
+    })
+})
+//微信验证接口
+router.post('/wxLogin',function(req,res,next){
+    const params={
+        code:req.body.code,
+        appid:'wxbf1505641371a5e5',
+        appsercret:'22b0961b31acbd172f1de97343b0c5bc'
+    }
+    console.log(params)
+    let url='https://api.weixin.qq.com/sns/jscode2session?appid='+params.appid+'&secret='+params.appsercret+'&js_code='+params.code+'&grant_type=authorization_code';
+    
+    request(url,function(err,response,body){
+        if(err){
+            res.json({
+                status:'2',
+                msg:'err:'+err
+            })
+        }else{
+            let b=JSON.parse(body)
+            if(b.openid){
+                let params={
+                    openId:b.openid
+                }
+                console.log(params)
+                User.findOne(params,function(err,doc){
+                    if(err){
+                        res.json({
+                            status:'2',
+                            msg:'登录出错'
+                        })
+                    }else{
+                        if(doc){
+                            res.json({
+                                status:'0',
+                                msg:'',
+                                userInfo:doc
+                            })
+                        }else{
+                            res.json({
+                                status:'3',
+                                msg:'您还没有将您的账号与微信关联,请先关联账户'
+                            })
+                        }
+                    }
+                })
+            }else{
+                res.json({
+                    status:'2',
+                    msg:'err:openid无返回,请稍候再试'
+                })
+            }
+        }
+    })
+});
+//绑定接口
+router.post('/wxBind',function(req,res,next){
+    let params={
+        userId:req.body.userId,
+        password:req.body.password,
+        code:req.body.code,
+        appid:'wxbf1505641371a5e5',
+        appsercret:'22b0961b31acbd172f1de97343b0c5bc'
+    }
+    console.log(params);
+    let url='https://api.weixin.qq.com/sns/jscode2session?appid='+params.appid+'&secret='+params.appsercret+'&js_code='+params.code+'&grant_type=authorization_code';
+    request(url,function(err,response,body){
+        if(err){
+            res.json({
+                status:'2',
+                msg:'openid请求出错'
+            })
+        }else{
+            let b=JSON.parse(body)
+            let openId=b.openid;
+            let params2={
+                userId:params.userId
+            }
+            User.findOne(params2,function(err,doc){
+                if(err){
+                    res.json({
+                        status:'2',
+                        msg:'用户查找过程出错'
+                    })
+                }else{
+                    if(doc){
+                        if(doc.password===params.password){
+                            doc.openId=openId;
+                            doc.save(function(){
+                                res.json({
+                                    status:'0',
+                                    msg:'成功',
+                                    userInfo:doc //这里最后不要所有信息都返回,得改掉
+                                })
+                            })
+                        }else{
+                            res.json({
+                                status:'3',
+                                msg:'密码错误'
+                            })
+                        }
+                    }else{
+                        res.json({
+                            status:'1',
+                            msg:'这个用户不存在'
+                        })
+                    }
+                }
+            })
         }
     })
 })
