@@ -5,7 +5,8 @@ var User=require('./../modules/users');
 var request=require('request')
 var Course=require('./../modules/courses');
 //连接mongodb test
-mongoose.connect('mongodb://118.24.187.179:27017/wecourse');
+mongoose.connect('mongodb://118.24.187.179:27017/wecourse',{useNewUrlParser: true});
+
 mongoose.connection.on('connected',function(){
     console.log('mongodb connected success')
 });
@@ -214,6 +215,7 @@ router.post('/register',function(req,res,next){
     })
 })
 router.post('/info',function(req,res,next){
+    //res.send('hello,')
     let params={
         userId:req.body.userId
     }
@@ -224,47 +226,88 @@ router.post('/info',function(req,res,next){
                 msg:err.message
             })
         }else{
-            console.log('/info')
             if(doc){
-                //尽量传递少的数据
-                let list=[];
-                let arr=doc.courseList;
-                arr.map((item)=>{
-                    let temp={
-                        courseId:item.courseId,
-                        courseSN:item.courseSN,
-                        courseName:item.courseName,
-                        courseInfo:item.courseInfo
-                    }
-                    list.push(temp)
-                })
-                let temp={
-                    userId:doc.userId,
-                    userImg:doc.userImg,
-                    status:doc.status,
-                    userName:doc.userName,
-                    email:doc.email,
-                    userPhone:doc.userPhone,
-                    courseList:list
+                try{
+                    let list=[];
+                    let arr=doc.courseList;
+                    if(arr.length<=0){
+                        res.json({
+                            status:'4',
+                            msg:'请注意,您还没有任何相关的行程!'
+                        })
+                    }else{
+                        let getData=()=>{
+                            return new Promise((resolve,reject)=>{
+                                    arr.map((item,index)=>{
+                                    let temp={
+                                        courseId:item.courseId,
+                                        courseSN:item.courseSN
+                                    }
+                                    Course.findOne(temp,function(error,doc2){
+                                        if(error){
+                                            throw error
+                                        }else{
+                                            if(doc2){
+                                                let item2={
+                                                    courseId:doc2.courseId,
+                                                    courseSN:doc2.courseSN,
+                                                    courseName:doc2.courseName,
+                                                    courseInfo:doc2.courseInfo
+                                                }
+                                                list.push(item2)
+                                                if(list.length===arr.length){
+                                                    resolve(list)
+                                                }
+                                            }else{ throw '没找到数据'}
+                                        }
+                                    })
+                                })
+                            })
+                        }
+                        getData().then(list=>{
+                            let temp={
+                                userId:doc.userId,
+                                userImg:doc.userImg,
+                                status:doc.status,
+                                userName:doc.userName,
+                                email:doc.email,
+                                userPhone:doc.userPhone,
+                                courseList:list
 
-                }
-                res.json({
-                    status:'0',
-                    msg:'',
-                    result:{
-                        count:doc.length,
-                        info:temp
+                            }
+                            res.json({
+                                status:'0',
+                                msg:'',
+                                result:{
+                                    count:list.length,
+                                    info:temp
+                                }
+                            })
+                        }).catch(err=>{
+                            res.json({
+                                status:'1',
+                                msg:'出问题了',
+                            })
+                            throw '出问题了啊啊啊啊啊啊'
+                        })
+                        
                     }
-                })
-            }else{
-                res.json({
-                    status:'2',
-                    msg:'没有返回值'
-                })
-            }
+                }catch(err){
+                    res.json({
+                        status:'2',
+                        msg:'err:'+err
+                    })
+                }
+        }else{
+            res.json({
+                status:'2',
+                msg:err.message
+            })
         }
-    })
-})
+        }
+
+    })    
+});
 router.post('/modify',function(req,res,next){
     let params={
         userId:req.body.userId
@@ -579,12 +622,72 @@ router.post('/wxLogin',function(req,res,next){
                             msg:'登录出错'
                         })
                     }else{
-                        if(doc){
+                        if(doc){/*
                             res.json({
                                 status:'0',
                                 msg:'',
                                 userInfo:doc
                             })
+                            */
+                            try{
+                            let list=[];
+                            let arr=doc.courseList;
+                            if(arr.length<=0){
+                                res.json({
+                                    status:'4',
+                                    msg:'请注意,您还没有任何相关的行程!'
+                                })
+                            }else{
+                                let getData=()=>{
+                                    return new Promise((resolve,reject)=>{
+                                            arr.map((item,index)=>{
+                                            let temp={
+                                                courseId:item.courseId,
+                                                courseSN:item.courseSN
+                                            }
+                                            Course.findOne(temp,function(error,doc2){
+                                                if(error){
+                                                    throw error
+                                                }else{
+                                                    if(doc2){
+                                                        let item2={
+                                                            courseId:doc2.courseId,
+                                                            courseSN:doc2.courseSN,
+                                                            courseName:doc2.courseName,
+                                                            courseInfo:doc2.courseInfo
+                                                        }
+                                                        list.push(item2)
+                                                        if(list.length===arr.length){
+                                                            resolve(list)
+                                                        }
+                                                    }else{ throw '没找到数据'}
+                                                }
+                                            })
+                                        })
+                                    })
+                                }
+                                getData().then(list=>{
+                                    doc.courseList=list;
+                                    res.json({
+                                        status:'0',
+                                        msg:'',
+                                        userInfo:doc
+                                    })
+                                }).catch(err=>{
+                                    res.json({
+                                        status:'1',
+                                        msg:'出问题了',
+                                    })
+                                    throw '出问题了啊啊啊啊啊啊'
+                                })
+                                
+                            }
+                        }catch(err){
+                            res.json({
+                                status:'2',
+                                msg:'err:'+err
+                            })
+                        }
                         }else{
                             res.json({
                                 status:'3',
@@ -636,11 +739,65 @@ router.post('/wxBind',function(req,res,next){
                         if(doc.password===params.password){
                             doc.openId=openId;
                             doc.save(function(){
+                                try{
+                                let list=[];
+                                let arr=doc.courseList;
+                                if(arr.length<=0){
+                                    res.json({
+                                        status:'4',
+                                        msg:'请注意,您还没有任何相关的行程!'
+                                    })
+                                }else{
+                                    let getData=()=>{
+                                        return new Promise((resolve,reject)=>{
+                                                arr.map((item,index)=>{
+                                                let temp={
+                                                    courseId:item.courseId,
+                                                    courseSN:item.courseSN
+                                                }
+                                                Course.findOne(temp,function(error,doc2){
+                                                    if(error){
+                                                        throw error
+                                                    }else{
+                                                        if(doc2){
+                                                            let item2={
+                                                                courseId:doc2.courseId,
+                                                                courseSN:doc2.courseSN,
+                                                                courseName:doc2.courseName,
+                                                                courseInfo:doc2.courseInfo
+                                                            }
+                                                            list.push(item2)
+                                                            if(list.length===arr.length){
+                                                                resolve(list)
+                                                            }
+                                                        }else{ throw '没找到数据'}
+                                                    }
+                                                })
+                                            })
+                                        })
+                                    }
+                                    getData().then(list=>{
+                                        doc.courseList=list;
+                                        res.json({
+                                            status:'0',
+                                            msg:'',
+                                            userInfo:doc
+                                        })
+                                    }).catch(err=>{
+                                        res.json({
+                                            status:'1',
+                                            msg:'出问题了',
+                                        })
+                                        throw '出问题了啊啊啊啊啊啊'
+                                    })
+                                    
+                                }
+                            }catch(err){
                                 res.json({
-                                    status:'0',
-                                    msg:'成功',
-                                    userInfo:doc //这里最后不要所有信息都返回,得改掉
+                                    status:'2',
+                                    msg:'err:'+err
                                 })
+                            }
                             })
                         }else{
                             res.json({

@@ -3,6 +3,7 @@ var router = express.Router();
 var Course=require('./../modules/courses');
 var User=require('./../modules/users');
 //列表接口
+/*
 router.post('/',function(req,res,next){
     //res.send('hello,')
     let params={
@@ -36,6 +37,91 @@ router.post('/',function(req,res,next){
                     courselist:list
                 }
             })
+        }else{
+            res.json({
+                status:'2',
+                msg:err.message
+            })
+        }
+        }
+
+    })    
+});
+*/
+router.post('/',function(req,res,next){
+    //res.send('hello,')
+    let params={
+        userId:req.body.userId
+    }
+    User.findOne(params,function(err,doc){
+        if(err){
+            res.json({
+                status:'1',
+                msg:err.message
+            })
+        }else{
+            if(doc){
+                try{
+                    let list=[];
+                    let arr=doc.courseList;
+                    if(arr.length<=0){
+                        res.json({
+                            status:'4',
+                            msg:'请注意,您还没有任何相关的行程!'
+                        })
+                    }else{
+                        let getData=()=>{
+                            return new Promise((resolve,reject)=>{
+                                    arr.map((item,index)=>{
+                                    let temp={
+                                        courseId:item.courseId,
+                                        courseSN:item.courseSN
+                                    }
+                                    Course.findOne(temp,function(error,doc2){
+                                        if(error){
+                                            throw error
+                                        }else{
+                                            if(doc2){
+                                                let item2={
+                                                    courseId:doc2.courseId,
+                                                    courseSN:doc2.courseSN,
+                                                    courseName:doc2.courseName,
+                                                    courseInfo:doc2.courseInfo
+                                                }
+                                                list.push(item2)
+                                                if(list.length===arr.length){
+                                                    resolve(list)
+                                                }
+                                            }else{ throw '没找到数据'}
+                                        }
+                                    })
+                                })
+                            })
+                        }
+                        getData().then(list=>{
+                            res.json({
+                                status:'0',
+                                msg:'',
+                                result:{
+                                    count:list.length,
+                                    courselist:list
+                                }
+                            })
+                        }).catch(err=>{
+                            res.json({
+                                status:'1',
+                                msg:'出问题了',
+                            })
+                            throw '出问题了啊啊啊啊啊啊'
+                        })
+                        
+                    }
+                }catch(err){
+                    res.json({
+                        status:'2',
+                        msg:'err:'+err
+                    })
+                }
         }else{
             res.json({
                 status:'2',
